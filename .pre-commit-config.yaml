@@ -12,7 +12,7 @@ repos:
   hooks:
     - id: black  # Форматирование кода с помощью Black
 
-- repo: https://github.com/PyCQA/flake8
-  rev: 7.1.0
+- repo: https://github.com/pycqa/isort
+  rev: 5.13.2
   hooks:
-    - id: flake8  # Линтинг кода с помощью Flake8
+    - id: isort
