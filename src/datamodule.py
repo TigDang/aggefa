@@ -3,9 +3,9 @@ from omegaconf import DictConfig
 from torch.utils.data import DataLoader, random_split
 
 
-class FaceDataModule(pl.LightningDataModule):
+class FaceDatamodule(pl.LightningDataModule):
     def __init__(self, dataset, datamodule_config: DictConfig):
-        super(FaceDataModule, self).__init__()
+        super(FaceDatamodule, self).__init__()
 
         # Инициализация параметров из Hydra конфигурации
         self.dataset = dataset
