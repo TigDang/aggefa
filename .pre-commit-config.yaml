@@ -1,0 +1,18 @@
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.6.0
+  hooks:
+    - id: trailing-whitespace  # Удаляет пробелы в конце строк
+    - id: end-of-file-fixer    # Обеспечивает наличие пустой строки в конце файла
+    - id: check-yaml           # Проверяет правильность YAML файлов
+    - id: check-added-large-files  # Предупреждает о добавлении крупных файлов
+
+- repo: https://github.com/psf/black
+  rev: 24.8.0
+  hooks:
+    - id: black  # Форматирование кода с помощью Black
+
+- repo: https://github.com/PyCQA/flake8
+  rev: 7.1.0
+  hooks:
+    - id: flake8  # Линтинг кода с помощью Flake8
