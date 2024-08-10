@@ -11,11 +11,11 @@ def train(cfg: DictConfig):
 
     # Инициализация модели, датамодуля и трейнера из конфигурации
     datamodule = hydra.utils.instantiate(cfg.datamodule)
-    model = hydra.utils.instantiate(cfg.model)
+    module = hydra.utils.instantiate(cfg.module)
     trainer = hydra.utils.instantiate(cfg.trainer)
 
     # Тренировка модели
-    trainer.fit(model, datamodule)
+    trainer.fit(module, datamodule)
 
 
 if __name__ == "__main__":
