@@ -7,15 +7,15 @@ from src.datamodule import FaceDatamodule
 from src.module import FaceRecognitionModule
 
 
-@hydra.main(version_base=None, config_path="config", config_name="config")
+@hydra.main(version_base=None, config_path="config", config_name="train")
 def train(cfg: DictConfig):
     # Установка начального seed для воспроизводимости
     seed_everything(cfg.seed)
 
     # Инициализация модели, датамодуля и трейнера из конфигурации
-    model = FaceRecognitionModule(**cfg.model)
-    datamodule = FaceDatamodule(**cfg.datamodule)
-    trainer = pl.Trainer(**cfg.trainer)
+    datamodule = hydra.utils.instantiate(cfg.datamodule)
+    model = hydra.utils.instantiate(cfg.model)
+    trainer = hydra.utils.instantiate(cfg.trainer)
 
     # Тренировка модели
     trainer.fit(model, datamodule)
