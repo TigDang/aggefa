@@ -26,8 +26,8 @@ class WiderfaceDataset:
     def __len__(self):
         return len(self.dataset)
 
-    def get_example(self, i):
-        example = self.dataset[i]
+    def __getitem__(self, idx):
+        example = self.dataset[idx]
         # Получение изображения
         image = example["image"]
 
