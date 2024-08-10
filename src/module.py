@@ -16,8 +16,8 @@ class ObjectDetector(pl.LightningModule):
         super().__init__()
 
         self.cfg = cfg
-        self.model = model
-        self.loss = loss
+        self.model = hydra.utils.instantiate(model)
+        self.loss = hydra.utils.instantiate(loss)
         self.map_metric = MeanAveragePrecision()
 
     def configure_optimizers(self):
@@ -71,7 +71,7 @@ class ObjectDetector(pl.LightningModule):
         self.log("val_loss", val_loss, on_epoch=True, prog_bar=True, logger=True)
         return val_loss
 
-    def validation_epoch_end(self, outputs):
+    def on_validation_epoch_end(self, outputs):
         # Расчет Mean Average Precision для всех валидационных данных
         map_score = self.map_metric.compute()
         self.log("val_map", map_score, prog_bar=True, logger=True)
@@ -86,7 +86,7 @@ class ObjectDetector(pl.LightningModule):
 
         return outputs
 
-    def test_epoch_end(self, outputs):
+    def on_test_epoch_end(self, outputs):
         # Расчет Mean Average Precision для всех тестовых данных
         map_score = self.map_metric.compute()
         self.log("test_map", map_score, prog_bar=True, logger=True)

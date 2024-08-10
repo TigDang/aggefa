@@ -6,3 +6,7 @@ defaults:
   - module: facedetection
 
 seed: 42
+
+trainer:
+  _target_: pytorch_lightning.Trainer
+  devices: [0]
