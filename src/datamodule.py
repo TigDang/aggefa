@@ -1,46 +1,34 @@
+import hydra
 import pytorch_lightning as pl
 from omegaconf import DictConfig
 from torch.utils.data import DataLoader, random_split
 
 
 class FaceDatamodule(pl.LightningDataModule):
-    def __init__(self, dataset, datamodule_config: DictConfig):
+    def __init__(self, datasets_conf: DictConfig, loaders_conf: DictConfig):
         super(FaceDatamodule, self).__init__()
 
         # Инициализация параметров из Hydra конфигурации
-        self.dataset = dataset
-        self.batch_size = datamodule_config.batch_size
-        self.num_workers = datamodule_config.num_workers
-        self.val_split = datamodule_config.val_split
+        self.datasets_conf = datasets_conf
+        self.loaders_conf = loaders_conf
 
-    def setup(self, stage=None):
-        # Разделение на тренировочный и валидационный наборы
-        val_size = int(len(self.dataset) * self.val_split)
-        train_size = len(self.dataset) - val_size
-        self.train_dataset, self.val_dataset = random_split(
-            self.dataset, [train_size, val_size]
-        )
+        self.trainset = hydra.utils.instantiate(datasets_conf.trainset)
+        self.valset = hydra.utils.instantiate(datasets_conf.valset)
+        self.testset = hydra.utils.instantiate(datasets_conf.testset)
+
+    # def setup(self):
 
     def train_dataloader(self):
-        return DataLoader(
-            self.train_dataset,
-            batch_size=self.batch_size,
-            shuffle=True,
-            num_workers=self.num_workers,
+        return hydra.utils.instantiate(
+            self.loaders.get("train_loader"), dataset=self.trainset
         )
 
     def val_dataloader(self):
-        return DataLoader(
-            self.val_dataset,
-            batch_size=self.batch_size,
-            shuffle=False,
-            num_workers=self.num_workers,
+        return hydra.utils.instantiate(
+            self.loaders.get("val_loader"), dataset=self.valset
         )
 
     def test_dataloader(self):
-        return DataLoader(
-            self.val_dataset,
-            batch_size=self.batch_size,
-            shuffle=False,
-            num_workers=self.num_workers,
+        return hydra.utils.instantiate(
+            self.loaders.get("test_loader"), dataset=self.testset
         )
