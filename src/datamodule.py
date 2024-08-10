@@ -1,19 +1,26 @@
+import logging
 from typing import Callable, Optional
 
 import datasets
 import hydra
 import pytorch_lightning as pl
+import torch
 from omegaconf import DictConfig
 
 
-class WIDERFACEDataset:
+class WiderfaceDataset:
     def __init__(
         self,
         split: str,
         transforms: Optional[Callable] = None,
     ):
         dataset = datasets.load_dataset("CUHK-CSE/wider_face", trust_remote_code=True)
-        self.dataset = dataset[split]
+        try:
+            self.dataset = dataset[split]
+        except KeyError:
+            logging.error(
+                f"There is no such split '{split}'. Available splits is {dataset.keys()}"
+            )
         self.transorms = transforms
 
     def __len__(self):
@@ -36,38 +43,35 @@ class WIDERFACEDataset:
 
 
 class FaceDatamodule(pl.LightningDataModule):
-    def __init__(self, datasets_conf: DictConfig, loaders_conf: DictConfig):
+    def __init__(
+        self,
+        trainset: Callable,
+        valset: Callable,
+        testset: Callable,
+        loaders: DictConfig,
+    ):
         super(FaceDatamodule, self).__init__()
-
-        # Инициализация параметров из Hydra конфигурации
-        self.datasets_conf = datasets_conf
-        self.loaders_conf = loaders_conf
-
-        self.trainset = hydra.utils.instantiate(datasets_conf.trainset)
-        self.valset = hydra.utils.instantiate(datasets_conf.valset)
-        self.testset = hydra.utils.instantiate(datasets_conf.testset)
-
-    def setup(self):
-        self.train_dataloader()
-        self.train_dataloader()
-        self.train_dataloader()
+        self.trainset = trainset
+        self.valset = valset
+        self.testset = testset
+        self.loaders_conf = loaders
 
     def train_dataloader(self):
-        return hydra.utils.instantiate(
-            self.loaders.get("train_loader"), dataset=self.trainset
+        return torch.utils.data.DataLoader(
+            **self.loaders_conf.train_loader, dataset=self.trainset
         )
 
     def val_dataloader(self):
-        return hydra.utils.instantiate(
-            self.loaders.get("val_loader"), dataset=self.valset
+        return torch.utils.data.DataLoader(
+            **self.loaders_conf.val_loader, dataset=self.valset
         )
 
     def test_dataloader(self):
-        return hydra.utils.instantiate(
-            self.loaders.get("test_loader"), dataset=self.testset
+        return torch.utils.data.DataLoader(
+            **self.loaders_conf.test_loader, dataset=self.testset
         )
 
 
 if __name__ == "__main__":
-    dataset = WIDERFACEDataset(split="train")
+    dataset = WiderfaceDataset(split="train")
     print()

@@ -3,9 +3,6 @@ import pytorch_lightning as pl
 from omegaconf import DictConfig
 from pytorch_lightning import seed_everything
 
-from src.datamodule import FaceDatamodule
-from src.module import FaceRecognitionModule
-
 
 @hydra.main(version_base=None, config_path="config", config_name="train")
 def train(cfg: DictConfig):
