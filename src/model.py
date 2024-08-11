@@ -16,6 +16,9 @@ class Retinanet_resnet50(torch.nn.Module):
     def forward(
         self, images: torch.Tensor, targets: Optional[torch.Tensor] = None
     ) -> torch.Tensor:
+        if targets is not None:
+            targets[0]["boxes"] = targets[0]["boxes"][0]
+            targets[0]["labels"] = targets[0]["labels"][0]
         return self.model(images, targets)
 
 

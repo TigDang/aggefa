@@ -46,8 +46,8 @@ class WiderfaceDataset:
             )
             image = augm_result["image"]
             bboxes = augm_result["bboxes"]
-
-        return image, torch.asarray(bboxes)
+        bboxes = torch.tensor(bboxes)
+        return image, [{"boxes": bboxes, "labels": torch.tensor([1] * bboxes.shape[0])}]
 
 
 class FaceDatamodule(pl.LightningDataModule):

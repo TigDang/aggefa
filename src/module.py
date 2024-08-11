@@ -69,6 +69,9 @@ class ObjectDetector(pl.LightningModule):
         # for i in range(targets.shape[1]):
         #     seq_targets.append()
 
+        targets[0]["boxes"] = targets[0]["boxes"][0]
+        targets[0]["labels"] = targets[0]["labels"][0]
+
         # Оценка метрики
         self.map_metric.update(outputs, targets)
 
