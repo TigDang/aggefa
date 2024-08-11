@@ -5,6 +5,10 @@ trainset:
   split: train
   transforms:
     _target_: albumentations.Compose
+    bbox_params:
+      _target_: albumentations.BboxParams
+      format: 'coco'
+      label_fields: ['class_labels']
     transforms:
       - _target_: albumentations.Resize
         height: 256
@@ -19,6 +23,10 @@ valset:
   split: validation
   transforms:
     _target_: albumentations.Compose
+    bbox_params:
+      _target_: albumentations.BboxParams
+      format: 'coco'
+      label_fields: ['class_labels']
     transforms:
       - _target_: albumentations.Resize
         height: 256
@@ -44,11 +52,11 @@ testset:
 
 loaders:
   train_loader:
-    batch_size: 16
+    batch_size: 1
     shuffle: True
     num_workers: 11
   val_loader:
-    batch_size: 32
+    batch_size: 1
     shuffle: False
     num_workers: 11
   test_loader:
