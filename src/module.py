@@ -18,7 +18,7 @@ class ObjectDetector(pl.LightningModule):
         self.cfg = cfg
         self.model = hydra.utils.instantiate(model)
         self.loss = hydra.utils.instantiate(loss)
-        self.map_metric = MeanAveragePrecision()
+        self.map_metric = MeanAveragePrecision().cuda()
 
     def configure_optimizers(self):
         # Инициализация оптимизатора через Hydra
@@ -63,18 +63,22 @@ class ObjectDetector(pl.LightningModule):
 
         # Подсчет валидационной потери
 
-        val_loss = self.loss(outputs, targets)
+        # val_loss = self.loss(outputs, targets)
+
+        # seq_targets = []
+        # for i in range(targets.shape[1]):
+        #     seq_targets.append()
 
         # Оценка метрики
         self.map_metric.update(outputs, targets)
 
-        self.log("val_loss", val_loss, on_epoch=True, prog_bar=True, logger=True)
-        return val_loss
+        # self.log("val_loss", val_loss, on_epoch=True, prog_bar=True, logger=True)
+        # return outputs
 
-    def on_validation_epoch_end(self, outputs):
+    def on_validation_epoch_end(self):
         # Расчет Mean Average Precision для всех валидационных данных
         map_score = self.map_metric.compute()
-        self.log("val_map", map_score, prog_bar=True, logger=True)
+        self.log("val_map", map_score["map"], prog_bar=True, logger=True)
         self.map_metric.reset()
 
     def test_step(self, batch, batch_idx):
@@ -86,7 +90,7 @@ class ObjectDetector(pl.LightningModule):
 
         return outputs
 
-    def on_test_epoch_end(self, outputs):
+    def on_test_epoch_end(self):
         # Расчет Mean Average Precision для всех тестовых данных
         map_score = self.map_metric.compute()
         self.log("test_map", map_score, prog_bar=True, logger=True)
