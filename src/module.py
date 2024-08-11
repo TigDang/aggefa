@@ -49,13 +49,13 @@ class ObjectDetector(pl.LightningModule):
 
         self.log(
             "train_loss",
-            train_loss,
+            train_loss["classification"] + train_loss["bbox_regression"],
             on_step=True,
             on_epoch=True,
             prog_bar=True,
             logger=True,
         )
-        return train_loss
+        return train_loss["classification"] + train_loss["bbox_regression"]
 
     def validation_step(self, batch, batch_idx):
         images, targets = batch

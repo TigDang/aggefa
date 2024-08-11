@@ -35,7 +35,14 @@ class WiderfaceDataset:
         image = np.array(image)
 
         # Получение bounding boxes
-        bboxes = example["faces"]["bbox"]
+        # bboxes = example["faces"]["bbox"]
+        invalid_mask = torch.tensor(example["faces"]["invalid"], dtype=torch.bool)
+
+        # Преобразуем список bbox в тензор
+        bbox_tensor = torch.tensor(example["faces"]["bbox"], dtype=torch.float32)
+
+        # Выбор валидных боксов
+        bboxes = bbox_tensor[~invalid_mask]
         if bboxes == [[0.0, 0.0, 0.0, 0.0]]:
             bboxes = []
         class_labels = ["face"] * len(bboxes)
@@ -47,6 +54,8 @@ class WiderfaceDataset:
             image = augm_result["image"]
             bboxes = augm_result["bboxes"]
         bboxes = torch.tensor(bboxes)
+        x, y, w, h = bboxes.unbind(1)
+        bboxes = torch.stack((x, y, x + w, y + h), dim=1).float()
         return image, [{"boxes": bboxes, "labels": torch.tensor([1] * bboxes.shape[0])}]
 
 
