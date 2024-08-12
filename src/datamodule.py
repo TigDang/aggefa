@@ -51,7 +51,7 @@ class FaceDatamodule(pl.LightningDataModule):
 
     def __init__(
         self,
-        dataset: Callable,
+        dataset: UTKFace,
         train_augm: Callable,
         val_augm: Callable,
         test_augm: Callable,
@@ -67,11 +67,14 @@ class FaceDatamodule(pl.LightningDataModule):
             dataset, [trainlenght, vallenght, testlenght]
         )
 
-        self.trainset.transform = train_augm
-        self.valset.transform = val_augm
-        self.testset.transform = test_augm
+        self.trainset.dataset.transform = train_augm
+        self.valset.dataset.transform = val_augm
+        self.testset.dataset.transform = test_augm
 
         self.loaders_conf = loaders
+
+    def setup(self, stage: str):
+        return
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(
