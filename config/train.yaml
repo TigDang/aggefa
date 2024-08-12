@@ -2,7 +2,7 @@
 
 defaults:
   - _self_
-  - datamodule: widerfaces
+  - datamodule: UTKFace
   - module: facedetection
 
 seed: 42

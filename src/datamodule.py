@@ -98,17 +98,32 @@ class WiderfaceDataset:
 
 
 class FaceDatamodule(pl.LightningDataModule):
+    trainset: UTKFace
+    valset: UTKFace
+    testset: UTKFace
+
     def __init__(
         self,
-        trainset: Callable,
-        valset: Callable,
-        testset: Callable,
+        dataset: Callable,
+        train_augm: Callable,
+        val_augm: Callable,
+        test_augm: Callable,
         loaders: DictConfig,
     ):
         super(FaceDatamodule, self).__init__()
-        self.trainset = trainset
-        self.valset = valset
-        self.testset = testset
+
+        trainlenght = int(len(dataset) * 0.7)
+        vallenght = int(len(dataset) * 0.1)
+        testlenght = len(dataset) - vallenght - trainlenght
+
+        self.trainset, self.valset, self.testset = torch.utils.data.random_split(
+            dataset, [trainlenght, vallenght, testlenght]
+        )
+
+        self.trainset.transform = train_augm
+        self.valset.transform = val_augm
+        self.testset.transform = test_augm
+
         self.loaders_conf = loaders
 
     def train_dataloader(self):
