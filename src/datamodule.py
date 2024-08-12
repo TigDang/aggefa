@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Callable, Optional
 
 import albumentations as A
@@ -8,6 +9,39 @@ import numpy as np
 import pytorch_lightning as pl
 import torch
 from omegaconf import DictConfig
+from PIL import Image
+
+
+class UTKFace:
+    def __init__(self, image_dir, transform=None):
+        self.image_dir = image_dir
+        self.image_filenames = os.listdir(image_dir)
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.image_filenames)
+
+    def __getitem__(self, idx):
+        # Получение имени файла и пути к изображению
+        img_name = self.image_filenames[idx]
+        img_path = os.path.join(self.image_dir, img_name)
+
+        # Загрузка изображения
+        image = Image.open(img_path).convert("RGB")
+
+        # Извлечение возраста и пола из имени файла
+        age, gender, _, _ = img_name.split("_")
+        age = int(age)
+        gender = float(gender)
+
+        if self.transform:
+            image = self.transform(image=np.array(image))["image"]
+
+        # Преобразование в тензор
+        return image, {
+            "age": torch.tensor(age, dtype=torch.float32),
+            "gender": torch.tensor(gender, dtype=torch.long),
+        }
 
 
 class WiderfaceDataset:
@@ -35,27 +69,31 @@ class WiderfaceDataset:
         image = np.array(image)
 
         # Получение bounding boxes
-        # bboxes = example["faces"]["bbox"]
         invalid_mask = torch.tensor(example["faces"]["invalid"], dtype=torch.bool)
-
         # Преобразуем список bbox в тензор
         bbox_tensor = torch.tensor(example["faces"]["bbox"], dtype=torch.float32)
-
         # Выбор валидных боксов
         bboxes = bbox_tensor[~invalid_mask]
-        if bboxes == [[0.0, 0.0, 0.0, 0.0]]:
-            bboxes = []
+
         class_labels = ["face"] * len(bboxes)
 
-        if self.transorms is not None:
-            augm_result = self.transorms(
-                image=image, bboxes=bboxes, class_labels=class_labels
-            )
-            image = augm_result["image"]
-            bboxes = augm_result["bboxes"]
+        try:
+            if self.transorms is not None:
+                augm_result = self.transorms(
+                    image=image, bboxes=bboxes, class_labels=class_labels
+                )
+                image = augm_result["image"]
+                bboxes = augm_result["bboxes"]
+                class_labels = augm_result["class_labels"]
+        except:
+            print()
+
         bboxes = torch.tensor(bboxes)
-        x, y, w, h = bboxes.unbind(1)
-        bboxes = torch.stack((x, y, x + w, y + h), dim=1).float()
+        if bboxes.shape != torch.Size([0]):
+            x, y, w, h = bboxes.unbind(1)
+            bboxes = torch.stack((x, y, x + w, y + h), dim=1).float()
+        else:
+            bboxes = torch.zeros((1, 4))
         return image, [{"boxes": bboxes, "labels": torch.tensor([1] * bboxes.shape[0])}]
 
 
