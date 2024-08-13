@@ -11,3 +11,4 @@ trainer:
   _target_: pytorch_lightning.Trainer
   accelerator: "gpu"
   devices: [0]
+  max_epochs: -1

@@ -30,8 +30,9 @@ class UTKFace:
         image = Image.open(img_path).convert("RGB")
 
         # Извлечение возраста и пола из имени файла
-        age, gender, _, _ = img_name.split("_")
-        age = int(age)
+        splitted_filename = img_name.split("_")
+        age, gender = splitted_filename[0], splitted_filename[1]
+        age = float(age)
         gender = float(gender)
 
         if self.transform:
@@ -39,8 +40,8 @@ class UTKFace:
 
         # Преобразование в тензор
         return image, {
-            "age": torch.tensor(age, dtype=torch.float32),
-            "gender": torch.tensor(gender, dtype=torch.long),
+            "age": torch.tensor([age], dtype=torch.float32),
+            "gender": torch.tensor([gender], dtype=torch.float32),
         }
 
 

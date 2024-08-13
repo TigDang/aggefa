@@ -10,6 +10,7 @@ from omegaconf import DictConfig
 from torchmetrics import Accuracy, MeanAbsoluteError
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
 from torchvision import models
+from torchvision.models import ResNet18_Weights
 
 
 class AgeGenderPredictor(pl.LightningModule):
@@ -23,12 +24,13 @@ class AgeGenderPredictor(pl.LightningModule):
         self.age_metric = hydra.utils.instantiate(age_metric)
 
         # Используем предобученную ResNet18 в качестве backbone
-        self.backbone = models.resnet18(pretrained=True)
+        self.backbone = models.resnet18(weights=ResNet18_Weights.DEFAULT)
         num_features = self.backbone.fc.in_features
+        self.backbone.fc = nn.Identity()
 
         # Замена последнего слоя на два отдельных слоя для возраста и пола
         self.age_head = nn.Linear(num_features, 1)  # Возраст - регрессия
-        self.gender_head = nn.Linear(num_features, 2)  # Пол - классификация
+        self.gender_head = nn.Linear(num_features, 1)  # Пол - классификация
 
     def configure_optimizers(self):
         # Инициализация оптимизатора через Hydra
@@ -59,7 +61,7 @@ class AgeGenderPredictor(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         images, targets = batch
         age_preds, gender_preds = self(images)
-        age_loss = F.mse_loss(age_preds.squeeze(), targets["age"])
+        age_loss = F.mse_loss(age_preds, targets["age"])
         gender_loss = F.cross_entropy(gender_preds, targets["gender"])
         loss = age_loss + gender_loss
         self.log("train_loss", loss)
@@ -68,7 +70,7 @@ class AgeGenderPredictor(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         images, targets = batch
         age_preds, gender_preds = self(images)
-        age_loss = F.mse_loss(age_preds.squeeze(), targets["age"])
+        age_loss = F.mse_loss(age_preds, targets["age"])
         self.age_metric.update(age_preds, targets["age"])
 
         gender_loss = F.cross_entropy(gender_preds, targets["gender"])
