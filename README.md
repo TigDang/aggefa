@@ -20,3 +20,8 @@ python train.py
 ```
 
 Feel free to edit hydra config inside <i>config</i> folder.
+
+Tensorboard server run:
+```
+tensorboard --logdir tb_logs/
+```
