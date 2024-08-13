@@ -5,13 +5,14 @@ defaults:
   - datamodule: UTKFace
   - module: facedetection
 
+task_name: Age_n_Gender_detection_Resnet18
 seed: 42
 
 trainer:
   _target_: pytorch_lightning.Trainer
   accelerator: "gpu"
   devices: [0]
-  max_epochs: -1
+  max_epochs: 1000
 
 logger:
   _target_: lightning.pytorch.loggers.TensorBoardLogger

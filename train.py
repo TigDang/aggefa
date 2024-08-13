@@ -14,7 +14,8 @@ def train(cfg: DictConfig):
     # Инициализация модели, датамодуля и трейнера из конфигурации
     datamodule = hydra.utils.instantiate(cfg.datamodule)
     module = hydra.utils.instantiate(cfg.module, _recursive_=False)
-    trainer = hydra.utils.instantiate(cfg.trainer)
+    logger = hydra.utils.instantiate(cfg.logger)
+    trainer = hydra.utils.instantiate(cfg.trainer, logger=logger)
 
     # Тренировка модели
     trainer.fit(module, datamodule)
