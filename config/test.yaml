@@ -6,3 +6,10 @@ defaults:
   - module: facedetection
 
 ckpt_path: None
+
+seed: 42
+
+trainer:
+  _target_: pytorch_lightning.Trainer
+  accelerator: "gpu"
+  devices: [0]
