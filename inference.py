@@ -84,6 +84,31 @@ async def predict_video(file: UploadFile = File(...)):
             process_video, temp.name
         )  # Pass temp.name to VideoCapture()
 
+        # Чтение кадров и предсказание
+        results = []
+        while True:
+            ret, frame = video.read()
+            if not ret:
+                break
+            # Детекция лиц
+            boxes = face_detector(frame)
+            results_of_frame = []
+            for box in boxes:
+                # Кропим по детекции
+                bbox = box.boxes.xyxy[0]
+                bbox = (bbox[0].item(), bbox[1].item(), bbox[2].item(), bbox[3].item())
+                face = np.array(frame.crop(bbox))
+                print("2")
+                # Применение модели
+                age, gender = gender_age_model(transform(face)[None, :])
+                age = int(age.item())
+                gender = "Male" if gender.item() > 0.5 else "Female"
+
+                results_of_frame.append(
+                    {"boxes xyxy": bbox, "age": age, "gender": gender}
+                )
+            results.append(results_of_frame)
+
         return JSONResponse(content={"results": results})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
