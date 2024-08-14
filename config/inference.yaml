@@ -1,0 +1,12 @@
+# @package _global_
+
+defaults:
+  - _self_
+  - module: facedetection
+
+aggefa_path: checkpoints/aggefa.ckpt
+aggefa_download_url: https://huggingface.co/tigdang/aggefa/resolve/main/aggefa.ckpt
+
+yolo_path: checkpoints/YOLOv8-face-detection.pt
+
+yolo_download_url: https://huggingface.co/jaredthejelly/yolov8s-face-detection/resolve/main/YOLOv8-face-detection.pt
