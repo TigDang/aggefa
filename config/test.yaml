@@ -1,0 +1,8 @@
+# @package _global_
+
+defaults:
+  - _self_
+  - datamodule: UTKFace
+  - module: facedetection
+
+ckpt_path: None
