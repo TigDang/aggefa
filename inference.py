@@ -1,6 +1,8 @@
+import asyncio
 import io
 import os
 
+import aiofiles
 import cv2
 import hydra
 import logger
@@ -9,7 +11,9 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
+import uvicorn
 from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from omegaconf import DictConfig
 from PIL import Image
@@ -21,14 +25,15 @@ import wget
 
 app = FastAPI()
 
+
 gender_age_model: pl.LightningModule
 face_detector: YOLO
 
 # Применение преобразований к изображению
 transform = transforms.Compose(
     [
-        transforms.Resize((256, 256)),
         transforms.ToTensor(),
+        transforms.Resize((256, 256)),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ]
 )
@@ -40,12 +45,24 @@ async def predict_image(file: UploadFile = File(...)):
     try:
         contents = await file.read()
         image = Image.open(io.BytesIO(contents))
-        image = np.array(image)
 
-        # Применение модели
-        result = gender_age_model.predict(image)
+        # Детекция лиц
+        boxes = face_detector(image)
+        results = []
+        for box in boxes:
+            # Кропим по детекции
+            bbox = box.boxes.xyxy[0]
+            bbox = (bbox[0].item(), bbox[1].item(), bbox[2].item(), bbox[3].item())
+            face = np.array(image.crop(bbox))
+            print("2")
+            # Применение модели
+            age, gender = gender_age_model(transform(face)[None, :])
+            age = int(age.item())
+            gender = "Male" if gender.item() > 0.5 else "Female"
 
-        return JSONResponse(content=result)
+            results.append({"boxes xyxy": bbox, "age": age, "gender": gender})
+
+        return JSONResponse(content=results)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -54,17 +71,18 @@ async def predict_image(file: UploadFile = File(...)):
 @app.post("/predict/video")
 async def predict_video(file: UploadFile = File(...)):
     try:
-        contents = await file.read()
-        video = cv2.VideoCapture(io.BytesIO(contents))
+        async with aiofiles.tempfile.NamedTemporaryFile("wb", delete=False) as temp:
+            try:
+                contents = await file.read()
+                await temp.write(contents)
+            except Exception:
+                return {"message": "There was an error uploading the file"}
+            finally:
+                await file.close()
 
-        # Чтение кадров и предсказание
-        results = []
-        while True:
-            ret, frame = video.read()
-            if not ret:
-                break
-            result = gender_age_model.predict(frame)
-            results.append(result)
+        res = await run_in_threadpool(
+            process_video, temp.name
+        )  # Pass temp.name to VideoCapture()
 
         return JSONResponse(content={"results": results})
     except Exception as e:
@@ -98,6 +116,10 @@ def inference(cfg: DictConfig):
 
     global face_detector
     face_detector = YOLO(cfg.yolo_path)
+
+    # res = face_detector('https://upload.wikimedia.org/wikipedia/commons/6/68/Joe_Biden_presidential_portrait.jpg')
+
+    uvicorn.run(app, host="127.0.0.1", port=8000)
 
 
 if __name__ == "__main__":
