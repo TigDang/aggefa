@@ -12,10 +12,13 @@ def train(cfg: DictConfig):
     torch.set_float32_matmul_precision("high")
 
     # Инициализация модели, датамодуля и трейнера из конфигурации
-    datamodule = hydra.utils.instantiate(cfg.datamodule)
-    module = hydra.utils.instantiate(cfg.module, _recursive_=False)
+    callbacks: pl.Callback = hydra.utils.instantiate(cfg.callbacks)
+    datamodule: pl.LightningDataModule = hydra.utils.instantiate(cfg.datamodule)
+    module: pl.LightningModule = hydra.utils.instantiate(cfg.module, _recursive_=False)
     logger = hydra.utils.instantiate(cfg.logger)
-    trainer = hydra.utils.instantiate(cfg.trainer, logger=logger)
+    trainer: pl.Trainer = hydra.utils.instantiate(
+        cfg.trainer, logger=logger, callbacks=callbacks
+    )
 
     # Тренировка модели
     trainer.fit(module, datamodule)
