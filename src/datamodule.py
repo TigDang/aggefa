@@ -1,10 +1,7 @@
-import logging
 import os
-from typing import Callable, Dict, Optional
+from typing import Dict, Optional
 
 import albumentations as A
-import datasets
-import hydra
 import numpy as np
 import pytorch_lightning as pl
 import torch

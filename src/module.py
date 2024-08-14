@@ -1,14 +1,12 @@
-from typing import Callable, Dict, Optional, Tuple
+from typing import Dict, Tuple
 
 import hydra
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
 from omegaconf import DictConfig
-from torchmetrics import Accuracy, MeanAbsoluteError, Metric
-from torchmetrics.detection.mean_ap import MeanAveragePrecision
+from torchmetrics import Metric
 from torchvision import models
 from torchvision.models import ResNet18_Weights
 
