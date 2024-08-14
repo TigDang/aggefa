@@ -38,3 +38,29 @@ Tensorboard server run:
 ```
 tensorboard --logdir tb_logs/
 ```
+
+# Inference
+
+For that case you must get YOLO weights from HF:
+
+```
+wget https://huggingface.co/jaredthejelly/yolov8s-face-detection/resolve/main/YOLOv8-face-detection.pt -P checkpoints/
+```
+
+Thanks <b>jaredthejelly</b> for that model weights!
+
+And aggefa weights:
+
+```
+wget https://huggingface.co/tigdang/aggefa/resolve/main/aggefa.ckpt -P checkpoints/
+```
+
+OR
+
+Simply run
+
+```
+python inference.py
+```
+
+which will download them for you.
