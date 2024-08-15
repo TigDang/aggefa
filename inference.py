@@ -8,6 +8,7 @@ import hydra
 import logger
 import numpy as np
 import pytorch_lightning as pl
+import tempfile
 import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
@@ -48,19 +49,22 @@ async def predict_image(file: UploadFile = File(...)):
 
         # Детекция лиц
         boxes = face_detector(image)
-        results = []
-        for box in boxes:
-            # Кропим по детекции
-            bbox = box.boxes.xyxy[0]
-            bbox = (bbox[0].item(), bbox[1].item(), bbox[2].item(), bbox[3].item())
-            face = np.array(image.crop(bbox))
-            print("2")
-            # Применение модели
-            age, gender = gender_age_model(transform(face)[None, :])
-            age = int(age.item())
-            gender = "Male" if gender.item() > 0.5 else "Female"
+        if len(boxes[0].boxes.cls) == 0:
+            results = [{'boxes xyxy': 'no faces :('}]
+        else:
+            results = []
+            for box in boxes:
+                # Кропим по детекции
+                bbox = box.boxes.xyxy[0]
+                bbox = (bbox[0].item(), bbox[1].item(), bbox[2].item(), bbox[3].item())
+                face = np.array(image.crop(bbox))
+                print("2")
+                # Применение модели
+                age, gender = gender_age_model(transform(face)[None, :])
+                age = int(age.item())
+                gender = "Male" if gender.item() > 0.5 else "Female"
 
-            results.append({"boxes xyxy": bbox, "age": age, "gender": gender})
+                results.append({"boxes xyxy": bbox, "age": age, "gender": gender})
 
         return JSONResponse(content=results)
     except Exception as e:
@@ -70,46 +74,57 @@ async def predict_image(file: UploadFile = File(...)):
 # Эндпоинт для обработки видео
 @app.post("/predict/video")
 async def predict_video(file: UploadFile = File(...)):
+    # Проверяем, что файл видео
+    if not file.content_type.startswith("video"):
+        raise HTTPException(status_code=400, detail="Invalid file format")
+
     try:
-        async with aiofiles.tempfile.NamedTemporaryFile("wb", delete=False) as temp:
-            try:
-                contents = await file.read()
-                await temp.write(contents)
-            except Exception:
-                return {"message": "There was an error uploading the file"}
-            finally:
-                await file.close()
+        # Временное сохранение видеофайла
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_video:
+            temp_video.write(await file.read())
+            temp_video_path = temp_video.name  # Получаем путь к временно сохраненному файлу
 
-        res = await run_in_threadpool(
-            process_video, temp.name
-        )  # Pass temp.name to VideoCapture()
+        # Открываем видео с помощью OpenCV
+        cap = cv2.VideoCapture(temp_video_path)
 
-        # Чтение кадров и предсказание
+        if not cap.isOpened():
+            raise HTTPException(status_code=400, detail="Could not open video file")
+
+        # Читаем и обрабатываем видео кадр за кадром
         results = []
         while True:
-            ret, frame = video.read()
+            ret, frame = cap.read()
             if not ret:
                 break
+
+            # Пример обработки: преобразуем кадр в оттенки серого
             # Детекция лиц
+            frame = Image.fromarray(frame)
             boxes = face_detector(frame)
-            results_of_frame = []
-            for box in boxes:
-                # Кропим по детекции
-                bbox = box.boxes.xyxy[0]
-                bbox = (bbox[0].item(), bbox[1].item(), bbox[2].item(), bbox[3].item())
-                face = np.array(frame.crop(bbox))
-                print("2")
-                # Применение модели
-                age, gender = gender_age_model(transform(face)[None, :])
-                age = int(age.item())
-                gender = "Male" if gender.item() > 0.5 else "Female"
+            if len(boxes[0].boxes.cls) == 0:
+                frame_results = [{'boxes xyxy': 'no faces :('}]
+            else:
+                frame_results = []
+                for box in boxes:
+                    # Кропим по детекции
+                    bbox = box.boxes.xyxy[0]
+                    bbox = (bbox[0].item(), bbox[1].item(), bbox[2].item(), bbox[3].item())
+                    face = np.array(frame.crop(bbox))
+                    # Применение модели
+                    age, gender = gender_age_model(transform(face)[None, :])
+                    age = int(age.item())
+                    gender = "Male" if gender.item() > 0.5 else "Female"
 
-                results_of_frame.append(
-                    {"boxes xyxy": bbox, "age": age, "gender": gender}
-                )
-            results.append(results_of_frame)
+                    frame_results.append({"boxes xyxy": bbox, "age": age, "gender": gender})
 
-        return JSONResponse(content={"results": results})
+            # Здесь можно добавить любую другую обработку кадра, например, детекцию объектов
+            results.append(frame_results)
+
+        # Освобождаем ресурсы
+        cap.release()
+        os.remove(temp_video_path)  # Удаляем временный файл
+
+        return JSONResponse(content=results)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -142,7 +157,7 @@ def inference(cfg: DictConfig):
     global face_detector
     face_detector = YOLO(cfg.yolo_path)
 
-    # res = face_detector('https://upload.wikimedia.org/wikipedia/commons/6/68/Joe_Biden_presidential_portrait.jpg')
+    res = face_detector(torch.rand(1, 3, 512, 512))
 
     uvicorn.run(app, host="127.0.0.1", port=8000)
 
