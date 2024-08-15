@@ -39,6 +39,11 @@ Tensorboard server run:
 tensorboard --logdir tb_logs/
 ```
 
+# Test
+```
+python test.py ckpt_path=...
+```
+
 # Inference
 
 For that case you must get YOLO weights from HF:
@@ -55,15 +60,12 @@ And aggefa weights:
 wget https://huggingface.co/tigdang/aggefa/resolve/main/aggefa.ckpt -P checkpoints/
 ```
 
-OR
-
-Simply run
+For json-inference service:
 
 ```
 python inference.py
 ```
-
-which will download them for you.
+And then take a look at the `http://127.0.0.1:8000/docs`
 
 # Docker
 
