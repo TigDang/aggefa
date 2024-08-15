@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  pytorch:
+  inference:
     build:
       context: .
       dockerfile: Dockerfile
@@ -15,22 +15,4 @@ services:
           devices:
             - capabilities: [gpu]
     runtime: nvidia
-    # command: ["python", "train.py"]
-
-  ssh:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    volumes:
-      - .:/app
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
-    runtime: nvidia
-    command: ["/usr/sbin/sshd", "-D"]
-    ports:
-      - "2222:22"
+    command: ["python", "inference.py"]
