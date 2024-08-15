@@ -4,4 +4,3 @@ outputs
 data
 lightning_logs
 tb_logs
-checkpoints
