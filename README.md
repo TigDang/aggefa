@@ -5,8 +5,8 @@ age, gender &amp; face detector
 
 ### Dependencies:
 
-- Python 3.10.12
-- CUDA 12.6
+- Python `3.10.12`
+- CUDA `12.6`
 
 ### Python environment:
 
@@ -64,3 +64,14 @@ python inference.py
 ```
 
 which will download them for you.
+
+# Docker
+
+- Docker version `27.1.1`
+- Docker-compose version `1.29.2`
+
+
+For build container for inference:
+```
+docker-compose up --build inference
+```
